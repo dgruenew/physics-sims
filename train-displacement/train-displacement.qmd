@@ -1,0 +1,107 @@
+---
+title: "Train Collision"
+format: html
+editor: visual
+---
+
+# Train Collision: Displacement vs. Time Plot
+
+## Background
+
+-   Two trains are on the same track and separated by 100 miles.
+-   They are heading towards each other at a speed of 50 mph.
+-   When the trains depart, a bird flies off the first train and flies towards the 2nd train at 75 mph.
+-   When the bird reaches the 2nd train, it turns around and continues back towards the first train at the same speed of 75 mph.
+-   After reaching the 1st train again, it turns around and continues to the 2nd train. It continues going back and forth between the two trains until the trains collide.
+-   How far does the bird travel before the two trains collide?
+
+::: callout-note
+The **peregrine falcon** is the fastest bird in the world. It can reach speeds of up to 240 mph in a high-speed dive, called a stoop. So a bird traveling 75 mph is entirely feasible.
+:::
+
+## The Plot
+
+Displacement (miles) vs. Time (minutes)
+
+-   x-axis range: (0 - 65?) (max time of graph at 60)
+-   y-axis range (0 - 110?) (max range of graph is 100)
+
+## Data Set:
+
+> file: train_data_displacement_vs_time.csv \* One Graph with Two plots on same xy-axis
+
+### Data Column Headers
+
+-   x-axis: time_min
+-   y-axis: 1st plot: train_1_displacement_miles
+-   y-axis: 2nd plot: train_2_displacement_miles
+
+## Rough Animation Flow
+
+- [-]  Display Graph with starting point (as a dot) for each plot at time = 0 (first point). Label plot at origin as train 1. Label plot beginning at (0,100) as train 2.
+- [-]  Slowly plot each simultaneously.
+- [ ]  When plots intersect at the last point, indicate an explosion (cartoon drawn explosions?)
+- [ ]  Animated dashed horizontal line starting from point of intersection (60,50) to displacement-axis (0,50)
+- [ ]  Centered text (Segoe UI : Light) appears over dashed-line indicating 50 miles.
+- [ ]  Animated dashed vertical line starting from point of intersection (60,50) to time-axis (0,50).
+- [ ]  Text (Segoe UI : Light) appears to the left of the dashed-line indicating 1 hour.
+
+## Coding
+
+```{r setup}
+# load libraries ----
+library(tidyverse)
+library(janitor)
+library(extrafont)
+library(gganimate)
+library(gifski)
+library(Cairo)
+library(ggrepel)
+
+# # font_import() # run this once
+# loadfonts(device = "win")
+CairoWin()
+
+# load data ----
+df <- read_csv("data/train_data_displacement_vs_time.csv")
+
+theme_set(
+  theme_minimal(base_size = 32) + 
+    theme(
+      text = element_text(family = "Segoe UI Light"), #, face = "italic")
+      panel.border = element_rect(color = "black", linewidth = 1, fill = NA)
+    )
+)
+
+```
+
+```{r tidy}
+df1 <- df |> 
+  pivot_longer(cols = starts_with("train"),
+               names_to = "train",
+               names_pattern = "(.*)_displacement_miles",
+               values_to = "displacement_miles") |> 
+  mutate(train = train |> 
+           str_replace("_", " ") |> 
+           str_to_title())
+
+df1 |> 
+  ggplot(
+    aes(x = time_min,
+        y = displacement_miles,
+        group = train,
+        color = train,
+        label = train)
+  ) +
+  geom_line(linewidth = 2, lineend = "round") +
+  geom_point(size = 5) +
+  guides(color = "none") +
+  labs(
+    x = "Time (min)",
+    y = "Displacement (miles)"
+  ) +
+  geom_text_repel(hjust = 0, nudge_x = 3, size = 8) +
+  coord_cartesian(clip = "off") +
+  transition_reveal(time_min) +
+  view_follow(fixed_x = TRUE)
+```
