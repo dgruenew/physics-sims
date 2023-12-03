@@ -66,7 +66,7 @@ CairoWin()
 df <- read_csv("data/train_data_displacement_vs_time.csv")
 
 theme_set(
-  theme_minimal(base_size = 32) + 
+  theme_minimal(base_size = 48) + 
     theme(
       text = element_text(family = "Segoe UI Light"), #, face = "italic")
       panel.border = element_rect(color = "black", linewidth = 1, fill = NA)
@@ -77,21 +77,22 @@ theme_set(
 
 ```{r tidy}
 df1 <- df |> 
-  pivot_longer(cols = starts_with("train"),
-               names_to = "train",
+  pivot_longer(cols = contains("displacement_miles"),
+               names_to = "item",
                names_pattern = "(.*)_displacement_miles",
                values_to = "displacement_miles") |> 
-  mutate(train = train |> 
+  mutate(item = item |> 
            str_replace("_", " ") |> 
            str_to_title())
 
-df1 |> 
+(gg_animate_1 <- df1 |> 
+  filter(item != "Bird") |> 
   ggplot(
     aes(x = time_min,
         y = displacement_miles,
-        group = train,
-        color = train,
-        label = train)
+        group = item,
+        color = item,
+        label = item)
   ) +
   geom_line(linewidth = 2, lineend = "round") +
   geom_point(size = 5) +
@@ -100,8 +101,65 @@ df1 |>
     x = "Time (min)",
     y = "Displacement (miles)"
   ) +
-  geom_text_repel(hjust = 0, nudge_x = 3, size = 8) +
   coord_cartesian(clip = "off") +
+  geom_label_repel(hjust = 0, direction = "y", nudge_x = 2.5, size = 12, 
+                   xlim = c(-Inf, Inf), fill = "white") +
+  scale_x_continuous(breaks = seq(0,60, by = 20),
+                     expand = expansion(add = c(0, 10))) +
+  scale_color_manual(values = c("Train 1" = "#EA7580", 
+                                "Train 2" = "#088BBE",
+                                "Bird" = "#1BB6AF")) +
   transition_reveal(time_min) +
-  view_follow(fixed_x = TRUE)
+  view_follow(fixed_x = TRUE))
+
+animate(
+  gg_animate_1,
+  height = 1080, width = 1920, fps = 30, duration = 15,
+  end_pause = 120, rewind = FALSE,
+  renderer = gifski_renderer(),
+  type = "cairo"
+)
+
+anim_save("plot1.gif")
+  
 ```
+```{r}
+(gg_animate_2 <- df1 |> 
+  ggplot(
+    aes(x = time_min,
+        y = displacement_miles,
+        group = item,
+        color = item,
+        label = item)
+  ) +
+  geom_line(linewidth = 2, lineend = "round") +
+  geom_point(size = 5) +
+  guides(color = "none") +
+  labs(
+    x = "Time (min)",
+    y = "Displacement (miles)"
+  ) +
+  coord_cartesian(clip = "off") +
+  geom_label_repel(hjust = 0, direction = "y", nudge_x = 2.5, size = 12, 
+                   xlim = c(-Inf, Inf), fill = "white") +
+  scale_x_continuous(breaks = seq(0,60, by = 20),
+                     expand = expansion(add = c(0, 10))) +
+  scale_color_manual(values = c("Train 1" = "#EA7580", 
+                                "Train 2" = "#088BBE",
+                                "Bird" = "#1BB6AF")) +
+  # theme(
+  #   panel.border = element_blank()) +
+  transition_reveal(time_min) +
+  view_follow(fixed_x = TRUE))
+
+animate(
+  gg_animate_2,
+  height = 1080, width = 1920, fps = 30, duration = 15,
+  end_pause = 120, rewind = FALSE,
+  renderer = gifski_renderer(),
+  type = "cairo"
+)
+
+anim_save("plot2.gif")
+```
+
